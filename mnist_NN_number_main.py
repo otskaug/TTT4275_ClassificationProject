@@ -14,7 +14,7 @@ k_num = [1, 2, 3, 4, 5, 6, 7]
 img_size_h = 28
 img_size_v = 28
 num_pictures = 3
-num_clusters = [64, 512, 1024, 2048] #[32, 64, 128]
+num_clusters = [64, 128, 256, 512, 1024, 2048] #[32, 64, 128]
 
 #---------------------- data loading  ---------------------------------#
 
@@ -163,6 +163,8 @@ def run_NN(train_data_xval, train_data_yval, test_data_xval, test_data_yval, num
         plot_classified_img(num_pictures, test_data_xval, test_data_yval, predicted_true, "Run NN Plot of Success")
     confusion_matrix(predicted, test_data_yval, "Run NN", plot_bool)
 
+    return reg_errors
+
 def run_KNN(train_data_xval, train_data_yval, test_data_xval, test_data_yval, k_neighbours, num_pictures, plot_bool, progress_update):
     print(f"Running K={k_neighbours} - Nearest Neighbour classifier")
     reg_errors = 0
@@ -235,6 +237,7 @@ def run_KCNN(train_data_xval, train_data_yval, test_data_xval, test_data_yval, n
         plot_misclassified_img(num_pictures, test_data_xval, test_data_yval, predicted_errors, "Run KCNN, plot of Error")
         plot_classified_img(num_pictures, test_data_xval, test_data_yval, predicted_true, "Run KCNN, plot of Success")
     confusion_matrix(predicted, test_data_yval, "Run KCNN", plot_bool)
+    return reg_errors
 
 
 def run_CNN(train_data_xval, train_data_yval, test_data_xval, test_data_yval, n_clusters, num_pictures, plot_bool, progress_update):
@@ -293,14 +296,22 @@ def main():
 
     #run_NN(train_data_xval[0:train_size], train_data_yval[0:train_size], test_data_xval[0:test_size], test_data_yval[0:test_size], num_pictures, plot_bool, show_progress_percent)
     #run_KNN(train_data_xval[0:train_size], train_data_yval[0:train_size], test_data_xval[0:test_size],test_data_yval[0:test_size], 4, num_pictures, plot_bool, show_progress_percent)
-    run_CNN(train_data_xval[0:train_size], train_data_yval[0:train_size], test_data_xval[0:test_size], test_data_yval[0:test_size], num_clusters[1], num_pictures, plot_bool, show_progress_percent)
-    run_KCNN(train_data_xval[0:train_size], train_data_yval[0:train_size], test_data_xval[0:test_size], test_data_yval[0:test_size], num_clusters[1], 1, num_pictures, plot_bool, show_progress_percent)
+    #run_CNN(train_data_xval[0:train_size], train_data_yval[0:train_size], test_data_xval[0:test_size], test_data_yval[0:test_size], num_clusters[1], num_pictures, plot_bool, show_progress_percent)
+    #run_KCNN(train_data_xval[0:train_size], train_data_yval[0:train_size], test_data_xval[0:test_size], test_data_yval[0:test_size], num_clusters[1], 1, num_pictures, plot_bool, show_progress_percent)
     '''
     for i in range(len(k_num)):
         run_KNN(train_data_xval[0:train_size], train_data_yval[0:train_size], test_data_xval[0:test_size], test_data_yval[0:test_size], k_num[i], num_pictures, plot_bool, show_progress_percent)
-
-    for i in range(len(k_num)):
-        run_KCNN(train_data_xval[0:train_size], train_data_yval[0:train_size], test_data_xval[0:test_size], test_data_yval[0:test_size], num_clusters[1], k_num[i], num_pictures, plot_bool, show_progress_percent)
-
     '''
+    #run_KCNN(train_data_xval[0:train_size], train_data_yval[0:train_size], test_data_xval[0:test_size], test_data_yval[0:test_size], num_clusters[2], k_num[j], num_pictures, plot_bool, show_progress_percent)
+
+    reg_errors = 0
+    for i in range(10):
+        reg_errors += run_NN(train_data_xval[0:train_size], train_data_yval[0:train_size], test_data_xval[0:test_size], test_data_yval[0:test_size], num_pictures, plot_bool, show_progress_percent)
+        print("\n")
+
+    print("\n\nTot Errors = ", reg_errors)
+    print("Avg number Errors = ", reg_errors/10)
+    print("Avg Error Rate: ", reg_errors/1000, "%")
+    print("------------------------------------------------------")
+
 main()

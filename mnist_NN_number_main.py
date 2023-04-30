@@ -1,20 +1,18 @@
 import numpy as np
 import matplotlib.pyplot as plt
-import scipy.spatial.distance as disti
 from sklearn.cluster import KMeans
 import keras.datasets.mnist as mnist
 import time
 from collections import Counter
 from numba import numba, jit
-train_data = 0
-test_data = 0
+
 train_size = 60000
 test_size = 10000
-k_num = [1, 2, 3, 4, 5, 6, 7]
 img_size_h = 28
 img_size_v = 28
-num_pictures = 3
-num_clusters = [64, 128, 256, 512, 1024, 2048] #[32, 64, 128]
+num_pictures = 0
+k_num = [1, 2, 3, 4, 5, 6, 7]
+num_clusters = [64, 128, 256, 512, 1024, 2048]
 
 #---------------------- data loading  ---------------------------------#
 
@@ -104,30 +102,35 @@ def plot_confusionmatrix(name, conf_matrix):
     plt.xlabel('Predictions')
     plt.ylabel('Actuals')
     plt.title(name + ' - Confusion Matrix')
-    #plt.savefig("Result-Cmatrix_" + name, dpi=150)
+    plt.savefig("Result-Cmatrix_" + name, dpi=150)
     plt.show()
 
 def plot_misclassified_img(number_of_images, test_data_xval, test_data_yval, predicted_errors, title):
     print("Plotting misclassified images")
     for q in range(number_of_images):
         img_err = np.array(test_data_xval[predicted_errors[q][0]], dtype='float').reshape((img_size_h, img_size_v))
-        plt.imshow(img_err, cmap="gray")
+        fig = plt.figure()
+        ax = fig.subplots()
+
         if np.array(predicted_errors[q][1]).size > 1:
             plt.title(f"{title} nr: {q+1}, Predicted: {Most_Common(predicted_errors[q][1])}, \n Complete K-list: {predicted_errors[q][1]}, Actual number: {test_data_yval[predicted_errors[q][0]]}")
         else:
             plt.title(f"{title} nr: {q+1}, Predicted: {predicted_errors[q][1]}, Actual number: {test_data_yval[predicted_errors[q][0]]}")
+        ax.imshow(img_err, cmap="gray")
         plt.show()
-
 
 def plot_classified_img(number_of_images, test_data_xval, test_data_yval, predicted_true, title):
     print("Plotting correctly classified images")
     for q in range(number_of_images):
         img_true = np.array(test_data_xval[predicted_true[q][0]], dtype='float').reshape((img_size_h, img_size_v))
-        plt.imshow(img_true, cmap="gray")
+        fig = plt.figure()
+        ax = fig.subplots()
+
         if np.array(predicted_true[q][1]).size > 1:
             plt.title(f"{title} nr: {q+1}, Predicted: {Most_Common(predicted_true[q][1])}, \n Complete K-list: {predicted_true[q][1]}, Actual number: {test_data_yval[predicted_true[q][0]]}")
         else:
             plt.title(f"{title} nr: {q+1}, Predicted: {predicted_true[q][1]}, Actual number: {test_data_yval[predicted_true[q][0]]}")
+        ax.imshow(img_true, cmap="gray")
         plt.show()
 
 # ------------------------- Running ------------------------------------ #
@@ -162,7 +165,6 @@ def run_NN(train_data_xval, train_data_yval, test_data_xval, test_data_yval, num
         plot_misclassified_img(num_pictures, test_data_xval, test_data_yval, predicted_errors, "Run NN Plot of Error")
         plot_classified_img(num_pictures, test_data_xval, test_data_yval, predicted_true, "Run NN Plot of Success")
     confusion_matrix(predicted, test_data_yval, "Run NN", plot_bool)
-
     return reg_errors
 
 def run_KNN(train_data_xval, train_data_yval, test_data_xval, test_data_yval, k_neighbours, num_pictures, plot_bool, progress_update):
@@ -198,6 +200,7 @@ def run_KNN(train_data_xval, train_data_yval, test_data_xval, test_data_yval, k_
         plot_misclassified_img(num_pictures, test_data_xval, test_data_yval, predicted_errors, "Run KNN, plot of Error")
         plot_misclassified_img(num_pictures, test_data_xval, test_data_yval, predicted_true, "Run KNN plot of Success")
     confusion_matrix(predicted, test_data_yval, "Run KNN", plot_bool)
+    return reg_errors
 
 def run_KCNN(train_data_xval, train_data_yval, test_data_xval, test_data_yval, n_clusters, k_neighbours, num_pictures, plot_bool, progress_update):
     print(f"Running K={k_neighbours} - cluster classifier. Cluster size = {n_clusters}")
@@ -219,7 +222,7 @@ def run_KCNN(train_data_xval, train_data_yval, test_data_xval, test_data_yval, n
         if i / len(test_data_xval) * 100 > m:
             print(m, " Percent done")
             m += progress_update
-        k = nearest_neighbour(training_cluster, train_labels, reshape_test[i], k_neighbours)
+        k = slow_nearest_neighbour(training_cluster, train_labels, reshape_test[i], k_neighbours)
         most_k = Most_Common(k)
         predicted_num = most_k
         predicted.append(predicted_num)
@@ -280,12 +283,13 @@ def run_CNN(train_data_xval, train_data_yval, test_data_xval, test_data_yval, n_
         plot_misclassified_img(num_pictures, test_data_xval, test_data_yval, predicted_errors, "Run CNN, plot of Error")
         plot_classified_img(num_pictures, test_data_xval, test_data_yval, predicted_true, "Run CNN, plot of Success")
     confusion_matrix(predicted, test_data_yval, "Run CNN", plot_bool)
-
+    return reg_errors
 
 def main():
     print("Main stuff")
-    plot_bool = False
-    (train_data_xval, train_data_yval), (test_data_xval, test_data_yval) = load_dataset()
+    plot_bool = False #Bool deciding if one should plot or not, set to false for no plotting
+    num_pictures = 1 #Number of both classified and misclassified pictures to plot
+    (train_data_xval, train_data_yval), (test_data_xval, test_data_yval) = load_dataset() #Loading in dataset from mnist
 
     train_data_xval = np.array(train_data_xval)
     train_data_yval = np.array(train_data_yval)
@@ -294,24 +298,9 @@ def main():
 
     show_progress_percent = 101 #Over 100 will not show progress bar. If show_progress_percent < 100, it will print for each n*show_progress_percent it is done
 
-    #run_NN(train_data_xval[0:train_size], train_data_yval[0:train_size], test_data_xval[0:test_size], test_data_yval[0:test_size], num_pictures, plot_bool, show_progress_percent)
-    #run_KNN(train_data_xval[0:train_size], train_data_yval[0:train_size], test_data_xval[0:test_size],test_data_yval[0:test_size], 4, num_pictures, plot_bool, show_progress_percent)
-    #run_CNN(train_data_xval[0:train_size], train_data_yval[0:train_size], test_data_xval[0:test_size], test_data_yval[0:test_size], num_clusters[1], num_pictures, plot_bool, show_progress_percent)
-    #run_KCNN(train_data_xval[0:train_size], train_data_yval[0:train_size], test_data_xval[0:test_size], test_data_yval[0:test_size], num_clusters[1], 1, num_pictures, plot_bool, show_progress_percent)
-    '''
-    for i in range(len(k_num)):
-        run_KNN(train_data_xval[0:train_size], train_data_yval[0:train_size], test_data_xval[0:test_size], test_data_yval[0:test_size], k_num[i], num_pictures, plot_bool, show_progress_percent)
-    '''
-    #run_KCNN(train_data_xval[0:train_size], train_data_yval[0:train_size], test_data_xval[0:test_size], test_data_yval[0:test_size], num_clusters[2], k_num[j], num_pictures, plot_bool, show_progress_percent)
-
-    reg_errors = 0
-    for i in range(10):
-        reg_errors += run_NN(train_data_xval[0:train_size], train_data_yval[0:train_size], test_data_xval[0:test_size], test_data_yval[0:test_size], num_pictures, plot_bool, show_progress_percent)
-        print("\n")
-
-    print("\n\nTot Errors = ", reg_errors)
-    print("Avg number Errors = ", reg_errors/10)
-    print("Avg Error Rate: ", reg_errors/1000, "%")
-    print("------------------------------------------------------")
+    run_NN(train_data_xval[0:train_size], train_data_yval[0:train_size], test_data_xval[0:test_size], test_data_yval[0:test_size], num_pictures, plot_bool, show_progress_percent)
+    run_KNN(train_data_xval[0:train_size], train_data_yval[0:train_size], test_data_xval[0:test_size],test_data_yval[0:test_size], 7, num_pictures, plot_bool, show_progress_percent)
+    run_CNN(train_data_xval[0:train_size], train_data_yval[0:train_size], test_data_xval[0:test_size], test_data_yval[0:test_size], num_clusters[4], num_pictures, plot_bool, show_progress_percent)
+    run_KCNN(train_data_xval[0:train_size], train_data_yval[0:train_size], test_data_xval[0:test_size], test_data_yval[0:test_size], num_clusters[0], k_num[3], num_pictures, plot_bool, show_progress_percent)
 
 main()
